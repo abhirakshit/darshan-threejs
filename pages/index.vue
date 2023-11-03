@@ -5,5 +5,10 @@ useHead({ titleTemplate: '', title: awesome?.name || 'Nuxt 3 Awesome Starter' })
 </script>
 
 <template>
-  <AwesomeWelcome :with-alert="true" />
+  <div>
+<!--  <AwesomeWelcome :with-alert="true" />-->
+    <ClientOnly>
+      <ThreejsCanvas />
+    </ClientOnly>
+  </div>
 </template>
