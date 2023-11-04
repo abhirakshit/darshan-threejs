@@ -13,3 +13,5 @@ export interface AwesomeLayoutPageNavbarMenu {
   to?: RouteLocationRaw | ((nuxt: NuxtApp) => RouteLocationRaw)
   children?: AwesomeLayoutPageNavbarMenuDropdownItem[]
 }
+
+

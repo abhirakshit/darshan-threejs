@@ -1,111 +1,104 @@
 <script setup lang='ts'>
-import {
-  Scene, PerspectiveCamera, SphereGeometry,
-  MeshBasicMaterial, Mesh, WebGLRenderer, PlaneGeometry,
-  DoubleSide, AmbientLight, DirectionalLight, Vector3, Line, LineBasicMaterial, BufferGeometry
-} from 'three'
+import * as THREE from 'three';
 import { ref } from 'vue'
 
 let renderer
 const experience: ref<HTMLCanvasElement | null> = ref(null)
-const scene = new Scene()
-// const width = window.innerWidth, height = window.innerHeight
+const scene = new THREE.Scene()
 
 // Camera
 const {width, height} = useWindowSize()
 const chartWidthPercent = .75
 const aspectRatio = computed(() => width.value * chartWidthPercent/height.value)
-const camera = new PerspectiveCamera(75, aspectRatio.value, .1, 1000)
+const camera = new THREE.PerspectiveCamera(75, aspectRatio.value, .1, 1000)
 // camera.position.set(0,0,5)
-camera.position.set(0, 15, 0);
+camera.position.set(0, 0, 10);
 camera.lookAt(0, 0, 0);
 scene.add(camera)
 
 //Lighting
-const ambientLight = new AmbientLight(0xffffff, 0.5);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
-const directionalLight = new DirectionalLight(0xffffff, 1);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 directionalLight.position.set(1, 1, 1);
 scene.add(directionalLight);
 
-const sphereGeometry = new SphereGeometry(1, 24, 24)
-const mat = new MeshBasicMaterial({color: 'red'})
-const m_position = new Mesh(sphereGeometry, mat)
-m_position.position.set(0,0,0)
-scene.add(m_position)
+spawnDebugSphere(scene, {x: 0, y: 0, z: 0}, 'red', .2)
+// const sphereGeometry = new THREE.SphereGeometry(.2, 36, 36)
+// const mat = new THREE.MeshBasicMaterial({color: 'red'})
+// const m_position = new THREE.Mesh(sphereGeometry, mat)
+// m_position.position.set(0,0,0)
+// scene.add(m_position)
 
 //Chart Background
-const geometry = new PlaneGeometry(30, 16);  // Adjust size as needed
-const material = new MeshBasicMaterial({color: 0x008080, side: DoubleSide});
-const ground = new Mesh(geometry, material);
-ground.position.set(0,0,0)
-ground.rotation.x = Math.PI / 2;  // Rotate the ground to be horizontal
-scene.add(ground);
 
-const groundWidth = ground.geometry.parameters.width;
-const groundHeight = ground.geometry.parameters.height;
-// console.log(ground.position)
-function findIntersection(angle) {
-  const m = Math.tan(angle);
-  const x1 = groundWidth / 2;
-  const z1 = m * x1;
-  if (Math.abs(z1) <= groundHeight / 2) {
-    return new Vector3(x1, 0, z1);
-  }
-  const x2 = -groundWidth / 2;
-  const z2 = m * x2;
-  if (Math.abs(z2) <= groundHeight / 2) {
-    return new Vector3(x2, 0, z2);
-  }
-  const z3 = groundHeight / 2;
-  const x3 = z3 / m;
-  if (Math.abs(x3) <= groundWidth / 2) {
-    return new Vector3(x3, 0, z3);
-  }
-  const z4 = -groundHeight / 2;
-  const x4 = z4 / m;
-  if (Math.abs(x4) <= groundWidth / 2) {
-    return new Vector3(x4, 0, z4);
-  }
-}
+// House 1
+// Create a square using THREE.PlaneGeometry
+const side = 5
+// const house1 = getCoreHouseMesh(side, {color: 0x00ff00, side: THREE.DoubleSide})
+// house1.position.set(0, (Math.sqrt(2) * side)/2, 0)
+// scene.add(house1);
+const pos = {x: 0, y: (Math.sqrt(2) * side)/2, z: 0}
+const h1 = new SquareHouse(pos, 1, 'Aries',
+  side, {color: 0x00ff00, side: THREE.DoubleSide})
+scene.add(h1.getMesh())
+console.log(h1.getMesh().geometry.attributes.position.array )
+const arr = h1.getMesh().geometry.attributes.position.array
+spawnDebugSphere(scene, {x: arr[0], y: arr[1], z: arr[2]}, 'blue', .2)
+const h2 = new TriangleHouse({x:0, y: 5, z: 0}, 2, 'Taurus',
+  side, {color: 0x00fff0, side: THREE.DoubleSide})
+scene.add(h2.getMesh())
 
-const extendedDirections = {
-  N: findIntersection(Math.PI / 2),
-  NE: findIntersection(Math.PI / 4),
-  E: findIntersection(0),
-  SE: findIntersection(-Math.PI / 4),
-  S: findIntersection(-Math.PI / 2),
-  SW: findIntersection(-3 * Math.PI / 4),
-  W: findIntersection(Math.PI),
-  NW: findIntersection(3 * Math.PI / 4)
-};
-console.log(extendedDirections)
-const lineMaterial = new LineBasicMaterial({ color: 0x0000ff });  // Blue color
-function createLine(start, end) {
-  const geometry = new BufferGeometry();
-  const adjustedStart = new Vector3(start.x, 0.01, start.z);
-  // const adjustedStart = new Vector3(0, 0.01, 0);
-  const adjustedEnd = new Vector3(end.x, 0.01, end.z);
-  // const adjustedEnd = new Vector3(10, 0.01, 0);
-  console.log(start, end)
-  const points = [];
-  points.push(adjustedStart)
-  points.push(adjustedEnd)
-  geometry.setFromPoints(points);
-  return new Line(geometry, lineMaterial);
-}
 
-// Create lines based on the specified directions
-const lineNE = createLine(extendedDirections.N, extendedDirections.E);
-const lineNW = createLine(extendedDirections.N, extendedDirections.W);
-const lineSW = createLine(extendedDirections.S, extendedDirections.W);
-const lineSE = createLine(extendedDirections.S, extendedDirections.E);
-const lineNWSE = createLine(extendedDirections.NW, extendedDirections.SE);
-const lineNESW = createLine(extendedDirections.NE, extendedDirections.SW);
-// console.log(lineNE, lineNW)
-// Add lines to the scene
+
+// const planeWidth = 20, planeHeight = 12
+// const geometry = new PlaneGeometry(planeWidth, planeHeight);  // Adjust size as needed
+// const material = new MeshBasicMaterial({color: 0x008080, side: DoubleSide});
+// const ground = new Mesh(geometry, material);
+// ground.position.set(0,0,0)
+// scene.add(ground);
+//
+// const x_center = 0;  // Replace with the x-coordinate of the center
+// const y_center = 0;  // Replace with the y-coordinate of the center
+//
+// const directions = {
+//   N: {x: x_center, y: y_center + planeHeight / 2},
+//   NE: {x: x_center + planeWidth / 2, y: y_center + planeHeight / 2},
+//   E: {x: x_center + planeWidth / 2, y: y_center},
+//   SE: {x: x_center + planeWidth / 2, y: y_center - planeHeight / 2},
+//   S: {x: x_center, y: y_center - planeHeight / 2},
+//   SW: {x: x_center - planeWidth / 2, y: y_center - planeHeight / 2},
+//   W: {x: x_center - planeWidth / 2, y: y_center},
+//   NW: {x: x_center - planeWidth / 2, y: y_center + planeHeight / 2}
+// };
+//
+// const lineMaterial = new LineBasicMaterial({ color: 0x0000ff });  // Blue color
+// function createLine(start, end) {
+//   const geometry = new BufferGeometry();
+//   const points = [];
+//   points.push(start)
+//   points.push(end)
+//   geometry.setFromPoints(points);
+//   return new Line(geometry, lineMaterial);
+// }
+//
+// // Create lines based on the specified directions
+// const lineNE = createLine(directions.N, directions.E);
+// const lineNW = createLine(directions.N, directions.W);
+// const lineSW = createLine(directions.S, directions.W);
+// const lineSE = createLine(directions.S, directions.E);
+// const lineNWSE = createLine(directions.NW, directions.SE);
+// const lineNESW = createLine(directions.NE, directions.SW);
+// // Add lines to the scene
 // scene.add(lineNE, lineNW, lineSW, lineSE, lineNWSE, lineNESW);
-scene.add(lineSW, lineNW);
+//
+// const map = new TextureLoader().load( '/ganesha.png' );
+// const mat_ganesha = new MeshBasicMaterial( { map: map, color: 'white', opacity: .5 } );
+// const geo_ganesha = new PlaneGeometry(2,2)
+// const mesh_ganesha = new Mesh(geo_ganesha, mat_ganesha)
+// scene.add( mesh_ganesha );
+
+// console.log(getRhombus())
 
 
 function updateCamera() {
@@ -119,7 +112,7 @@ function updateRenderer() {
 
 function setRenderer() {
   if (experience.value) {
-    renderer = new WebGLRenderer({
+    renderer = new THREE.WebGLRenderer({
       canvas: experience.value,
     });
     renderer.setClearColor(0xebe7df);
