@@ -36,7 +36,7 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     // contents,
     '@nuxt/content',
-
+    'nuxt-lodash',
     // todo: feat/localization
     // '@nuxtjs/i18n'
   ],
